@@ -1,0 +1,2 @@
+# TaskManagementCoreData
+CoreDataを利用したタスク管理アプリ
