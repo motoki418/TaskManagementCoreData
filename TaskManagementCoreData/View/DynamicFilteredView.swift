@@ -19,8 +19,19 @@ struct DynamicFilteredView<Content: View, T>: View where T: NSManagedObject {
     // MARK: Building Custom ForEach which will give CoreData object to build View
     init(dateToFilter: Date, @ViewBuilder content : @escaping (T) -> Content){
         
+        // MARK: Pedicate to Filter current date Tasks
+        let calender = Calendar.current
+        
+        let today = calender.startOfDay(for: dateToFilter)
+        let tomorrow = calender.date(byAdding: .day, value: 1, to: dateToFilter)!
+        
+        // Filter Key
+        let filterKey = "taskDate"
+        
+        // This will fetch task between today and tomorrow which 24 HRS
+        let predicate = NSPredicate(format: "\(filterKey) >= %@ AND \(filterKey) < %@", argumentArray: [today, tomorrow])
         //Initializing Request with NSPredicate
-        _request = FetchRequest(entity: T.entity(), sortDescriptors: [], predicate: nil)
+        _request = FetchRequest(entity: T.entity(), sortDescriptors: [], predicate: predicate)
         self.content = content
     }
     var body: some View {
@@ -29,7 +40,7 @@ struct DynamicFilteredView<Content: View, T>: View where T: NSManagedObject {
                 Text("No tasks found!!!")
                     .font(.system(size: 16))
                     .fontWeight(.light)
-                    .offset(x: 100)
+                    .offset(y: 100)
             }
             else{
                 

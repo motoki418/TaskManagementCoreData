@@ -14,6 +14,9 @@ struct NewTaskView: View {
     @State var taskTitle: String = ""
     @State var taskDescription: String = ""
     @State var taskDate: Date = Date()
+    
+    // MARK: Core Data Context
+    @Environment(\.managedObjectContext) var context
     var body: some View {
         NavigationView{
             
@@ -49,7 +52,16 @@ struct NewTaskView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing){
                     Button("Save"){
+                        //Simply create anew entity object with managed context and set the values for the object and finally save the context,this will create a new objhect in our core data
+                        let task = Task(context: context)
+                        task.taskTitle = taskTitle
+                        task.taskDescription = taskDescription
+                        task.taskDate = taskDate
                         
+                        // Saving
+                        try? context.save()
+                        // Dismissing View
+                        dismiss()
                     }
                     .disabled(taskTitle == "" || taskDescription == "")
                 }

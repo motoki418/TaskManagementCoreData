@@ -15,6 +15,13 @@ struct HomeView: View {
     // 名前空間
     @Namespace var animation
     
+    // MARK: Core Data Context
+    @Environment(\.managedObjectContext) var context
+    
+    // MARK: Core Data Context
+    // Contextは環境という意味
+    @Environment(\.editMode) var editButton
+    
     var body: some View {
         // Our home view basically consists of a horizontal scrollview which will allows us to select a date from current week
         // Below that all the tasks of the selected date will be displayed and the if the current hour is having any task, that will be highlighted
@@ -110,7 +117,6 @@ struct HomeView: View {
         )
         .sheet(isPresented: $taskViewModel.addNewTask){
             NewTaskView()
-            
         }
     }// body
     
@@ -135,27 +141,45 @@ struct HomeView: View {
     func TaskCardView(task: Task) -> some View{
         // Let's create the Card View for each Task
         // MARK: Since CoreData Values will Give Optional data
-        HStack(alignment: .top, spacing: 30){
-            // 黒丸と黒線を縦並びに
-            VStack(spacing: 10){
-                // 内側の黒丸
-                Circle()
-                //現在の日時と同じ日時のタスクのみタスク名の左側に表示している丸の色を黒にする
-                    .fill(taskViewModel.isCurrentHour(date: task.taskDate ?? Date()) ? .black : .clear)
-                    .frame(width: 15, height: 15)
-                    .background(
-                        // 外側の細い円
-                        Circle()
-                            .stroke(.black, lineWidth: 1)
-                            .padding(-3)
-                    )
-                // 現在の日時と同じ日時のタスクのみ丸を大きくする
-                // 引数の先頭に！をつけているので、現在の日時と違う日時のタスクの丸の大きさを0.5にする
-                    .scaleEffect(!taskViewModel.isCurrentHour(date: task.taskDate ?? Date()) ? 0.5 : 1)
-                Rectangle()
-                    .fill(.black)
-                    .frame(width: 3)
-            }// VStack
+        HStack(alignment: editButton?.wrappedValue == .active ? .center : .top, spacing: 30){
+            // If the editbutton is active then hiding the timeline view and showing the edit actons(delete update)
+            if editButton?.wrappedValue == .active{
+                
+                Button{
+                    //MARK: Deleting Task
+                    context.delete(task)
+                    
+                    // Saving
+                    try? context.save()
+                    
+                }label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.red)
+                }
+            }
+            else{
+                // 黒丸と黒線を縦並びに
+                VStack(spacing: 10){
+                    // 内側の黒丸
+                    Circle()
+                    //現在の日時と同じ日時のタスクのみタスク名の左側に表示している丸の色を黒にする
+                        .fill(taskViewModel.isCurrentHour(date: task.taskDate ?? Date()) ? (task.isCompleted ? .green : .black) : .clear)
+                        .frame(width: 15, height: 15)
+                        .background(
+                            // 外側の細い円
+                            Circle()
+                                .stroke(.black, lineWidth: 1)
+                                .padding(-3)
+                        )
+                    // 現在の日時と同じ日時のタスクのみ丸を大きくする
+                    // 引数の先頭に！をつけているので、現在の日時と違う日時のタスクの丸の大きさを0.5にする
+                        .scaleEffect(!taskViewModel.isCurrentHour(date: task.taskDate ?? Date()) ? 0.5 : 1)
+                    Rectangle()
+                        .fill(.black)
+                        .frame(width: 3)
+                }// VStack
+            }
             VStack{
                 HStack(alignment: .top, spacing: 10){
                     VStack(alignment: .leading, spacing: 12){
@@ -174,31 +198,26 @@ struct HomeView: View {
                 if taskViewModel.isCurrentHour(date: task.taskDate ?? Date()){
                     // MARK: Team Members
                     // チームメンバーの画像を表示
-                    HStack(spacing: 0){
-                        HStack(spacing: -10){
-                            ForEach(["User1","User2","User3"], id: \.self){ user in
-                                Image(user)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 45, height: 45)
-                                    .clipShape(Circle())
-                                    .background(
-                                        Circle()
-                                            .stroke(.blue, lineWidth: 5)
-                                    )
-                            }// ForEach
-                        }// HStack(spacing: -10)
-                        .hLeading()
-                        
+                    HStack(spacing: 12){
                         // MARK: Check Button
-                        Button{
-                            
-                        }label: {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.black)
-                                .padding(10)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                        if !task.isCompleted{
+                            Button{
+                                // MARK: Updating Task
+                                task.isCompleted = true
+                                
+                                //Saving
+                                try? context.save()
+                            }label: {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.black)
+                                    .padding(10)
+                                    .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                            }
                         }
+                        Text(task.isCompleted ? "Marked as Completed" : "Mark Task s Completed")
+                            .font(.system(size: task.isCompleted ? 14 :16, weight: .light))
+                            .foregroundColor(task.isCompleted ? .gray : .white)
+                            .hLeading()
                     }// HStack(spacing: 0)
                     .padding(.top)
                 }
@@ -232,16 +251,9 @@ struct HomeView: View {
             }// VStack
             // Textを左寄せ
             .hLeading()
-            Button{
-                
-            }label: {
-                Image("Profile")
-                // 画像サイズをフレームサイズに合わせる
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 45, height: 45)
-                    .clipShape(Circle())
-            }// Profileボタン
+            
+            // MARK: Edit Button
+            EditButton()
         }// HStack
         .padding()
         .padding(.top, getSafeArea().top)
