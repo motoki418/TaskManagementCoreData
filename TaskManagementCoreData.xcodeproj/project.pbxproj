@@ -87,8 +87,8 @@
 			children = (
 				360B988727B67774005306C9 /* HomeView.swift */,
 				366FDC9227B7C9C80088AFE9 /* NewTaskView.swift */,
-				360B987427B674E2005306C9 /* ContentView.swift */,
 				369C28B627B67D89004326A9 /* DynamicFilteredView.swift */,
+				360B987427B674E2005306C9 /* ContentView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";

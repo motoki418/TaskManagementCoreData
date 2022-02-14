@@ -25,6 +25,9 @@ class TaskViewModel: ObservableObject{
     //MARK: New Task View
     @Published var addNewTask: Bool = false
     
+    // MARK: Edit Data
+    //The logic is simple when ever the edit button is clicked it will store the current task in our view model nd triggers the new task view
+    @Published var editTask: Task?
     // MARK: Intializing
     // 一番最初に現在の週の日付（日〜土）を取得するfetchCurrentWeekを呼び出す
     init(){
@@ -79,7 +82,9 @@ class TaskViewModel: ObservableObject{
         let calender = Calendar.current
         let hour = calender.component(.hour, from: date)
         let currentHour = calender.component(.hour, from: Date())
+        
+        let isToday = calender.isDateInToday(date)
         // タスクの日時と現在の日時が同じ場合にtrueを返す
-        return hour == currentHour
+        return (hour == currentHour && isToday)
     }
 }

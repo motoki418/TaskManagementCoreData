@@ -115,20 +115,22 @@ struct HomeView: View {
             
             ,alignment: .bottomTrailing
         )
+        //In our New Task view it will check if the view model contains any edit task data, if so then it will display the already stored task info and allows the user to edit them(but not and whenever the new task view is dismissed, we're the clearing the edit task data in the view modell(to avoid unnecessary bhus)
         .sheet(isPresented: $taskViewModel.addNewTask){
+            // Clearing Edit Data
+            taskViewModel.editTask = nil
+        }content:{
             NewTaskView()
+                .environmentObject(taskViewModel)
         }
     }// body
     
     // MARK: Tasks View
     // Let's build the Tasks View, which will update dynamically when ever user is tapped on another date
     func TasksView() -> some View {
-        
         LazyVStack(spacing: 20){
-            
             // Converting object as Our TaskModel
             DynamicFilteredView(dateToFilter: taskViewModel.currentDay){ (object: Task) in
-                
                 TaskCardView(task: object)
             }
         }// LazyVStack
@@ -144,19 +146,36 @@ struct HomeView: View {
         HStack(alignment: editButton?.wrappedValue == .active ? .center : .top, spacing: 30){
             // If the editbutton is active then hiding the timeline view and showing the edit actons(delete update)
             if editButton?.wrappedValue == .active{
-                
-                Button{
-                    //MARK: Deleting Task
-                    context.delete(task)
+                // Edit Button for Current and Future Tasks
+                //Update task button will only visible if the task is current/future but not for the past tasks!
+                VStack(spacing: 12){
                     
-                    // Saving
-                    try? context.save()
+                    if task.taskDate?.compare(Date()) == .orderedDescending || Calendar .current.isDateInToday(task.taskDate ?? Date()){
+                        Button{
+                            
+                            taskViewModel.editTask = task
+                            taskViewModel.addNewTask.toggle()
+                        }label: {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.title)
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    Button{
+                        //MARK: Deleting Task
+                        context.delete(task)
+                        
+                        // Saving
+                        try? context.save()
+                        
+                    }label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.red)
+                    }
                     
-                }label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.red)
                 }
+                
             }
             else{
                 // 黒丸と黒線を縦並びに
@@ -179,7 +198,7 @@ struct HomeView: View {
                         .fill(.black)
                         .frame(width: 3)
                 }// VStack
-            }
+            }// if文
             VStack{
                 HStack(alignment: .top, spacing: 10){
                     VStack(alignment: .leading, spacing: 12){
